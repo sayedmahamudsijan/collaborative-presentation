@@ -9,25 +9,15 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: [
-            'http://localhost:3000',
-            'https://collaborative-presentation-odw20tjzy.vercel.app',
-            'https://collaborative-presen-git-6e8bbd-sayed-mahmuds-projects-2f91c151.vercel.app'
-        ],
-        methods: ['GET', 'POST',
- 'PUT',
- 'DELETE'],
+        origin: ['http://localhost:3000', 'https://collaborative-presentation-odw20tjzy.vercel.app'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true
     }
 });
 
 // Middleware
 app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'https://collaborative-presentation-odw20tjzy.vercel.app',
-        'https://collaborative-presen-git-6e8bbd-sayed-mahmuds-projects-2f91c151.vercel.app'
-    ],
+    origin: ['http://localhost:3000', 'https://collaborative-presentation-odw20tjzy.vercel.app'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
@@ -46,7 +36,7 @@ io.on('connection', (socket) => {
 
     socket.on('join_presentation', async ({ presentationId, nickname }) => {
         try {
-            socket.join(presentationId');
+            socket.join(presentationId);
             const [user, created] = await sequelize.models.User.findOrCreate({
                 where: { presentation_id: presentationId, nickname },
                 defaults: { role: 'viewer', socket_id: socket.id }
@@ -56,15 +46,10 @@ io.on('connection', (socket) => {
                     { socket_id: socket.id },
                     { where: { presentation_id: presentationId, nickname } }
                 );
-            } else {
-                await sequelize.models.update(
-                    { socket_id: socket.id },
-                    { where: { presentation_id: presentationId, nickname } }
-                );
             }
             const users = await sequelize.models.User.findAll({ where: { presentation_id: presentationId } });
             io.to(presentationId).emit('update_users', users);
-        } catch (err) {
+        } catch (error) {
             console.error('Error joining presentation:', error);
         }
     });
@@ -75,9 +60,9 @@ io.on('connection', (socket) => {
                 { role },
                 { where: { presentation_id: presentationId, nickname } }
             );
-            const users = await sequelize.models.User.findAll({ where: { where: presentation_id: presentationId } });
+            const users = await sequelize.models.User.findAll({ where: { presentation_id: presentationId } });
             io.to(presentationId).emit('update_users', users);
-        } catch (err) {
+        } catch (error) {
             console.error('Error updating role:', error);
         }
     });
@@ -91,7 +76,7 @@ io.on('connection', (socket) => {
                 presentation_id: element.presentationId
             });
             io.to(element.presentationId).emit('element_added', newElement);
-        } catch (err) {
+        } catch (error) {
             console.error('Error adding element:', error);
         }
     });
@@ -100,7 +85,7 @@ io.on('connection', (socket) => {
         try {
             await sequelize.models.Element.update({ data }, { where: { id: elementId } });
             io.to(presentationId).emit('element_updated', { id: elementId, data });
-        } catch (err) {
+        } catch (error) {
             console.error('Error updating element:', error);
         }
     });
@@ -109,7 +94,7 @@ io.on('connection', (socket) => {
         try {
             await sequelize.models.Element.destroy({ where: { id: elementId } });
             io.to(presentationId).emit('element_deleted', elementId);
-        } catch (err) {
+        } catch (error) {
             console.error('Error deleting element:', error);
         }
     });
@@ -118,7 +103,7 @@ io.on('connection', (socket) => {
         try {
             await sequelize.models.User.destroy({ where: { socket_id: socket.id } });
             console.log('Client disconnected:', socket.id);
-        } catch (err) {
+        } catch (error) {
             console.error('Error on disconnect:', error);
         }
     });
@@ -127,15 +112,14 @@ io.on('connection', (socket) => {
 // Start server
 sequelize.authenticate()
     .then(() => {
-        console.log('Database connected successfully');
-        return sequelize.sync({ force: false }); // Production setting; set to true for dev to recreate tables
+        console.log('Database connected');
+        return sequelize.sync({ force: false }); // Production setting
     })
     .then(() => {
-        const port = process.env.PORT || 5000;
-        server.listen(port, () => {
-            console.log(`Server running on port ${port}`);
+        server.listen(process.env.PORT || 5000, () => {
+            console.log('Server running on port', process.env.PORT || 5000);
         });
     })
     .catch((error) => {
-        console.error('Failed to connect to database or start server:', error.message);
+        console.error('Failed to connect to database or start server:', error);
     });
