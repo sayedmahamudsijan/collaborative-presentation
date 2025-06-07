@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:3000',
+        origin: 'https://collaborative-presen-git-6e8bbd-sayed-mahmuds-projects-2f91c151.vercel.app',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true
     }
@@ -17,7 +17,7 @@ const io = new Server(server, {
 
 // Middleware
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: 'https://collaborative-presen-git-6e8bbd-sayed-mahmuds-projects-2f91c151.vercel.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
