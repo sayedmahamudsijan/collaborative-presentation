@@ -29,19 +29,29 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
             })
             .then((elements) => {
                 elements.forEach((el) => {
-                    if (el.type === 'text') {
-                        const text = new fabric.Textbox(el.data.text, {
-                            left: el.data.left,
-                            top: el.data.top,
-                            fontSize: el.data.fontSize,
-                            fill: el.data.fill,
-                            id: el.id
-                        });
-                        c.add(text);
-                    } else {
-                        const shape = new fabric[el.type === 'line' ? 'Line' : el.type](el.data);
-                        shape.id = el.id;
-                        c.add(shape);
+                    try {
+                        // Normalize type for Fabric.js
+                        const fabricType = el.type === 'text' ? 'Textbox' :
+                                          el.type === 'line' ? 'Line' :
+                                          el.type.charAt(0).toUpperCase() + el.type.slice(1);
+                        if (el.type === 'text') {
+                            const text = new fabric.Textbox(el.data.text, {
+                                left: el.data.left,
+                                top: el.data.top,
+                                fontSize: el.data.fontSize,
+                                fill: el.data.fill,
+                                id: el.id
+                            });
+                            c.add(text);
+                        } else if (['Rect', 'Circle', 'Line'].includes(fabricType)) {
+                            const shape = new fabric[fabricType](el.data);
+                            shape.id = el.id;
+                            c.add(shape);
+                        } else {
+                            console.warn(`Unknown element type: ${el.type}`);
+                        }
+                    } catch (err) {
+                        console.error(`Error loading element ${el.id}:`, err.message);
                     }
                 });
                 c.renderAll();
@@ -80,21 +90,28 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
         // Socket event handlers
         socket.on('element_added', (element) => {
             if (element.slide_id === slide.id) {
-                if (element.type === 'text') {
-                    const text = new fabric.Textbox(element.data.text, {
-                        left: element.data.left,
-                        top: element.data.top,
-                        fontSize: element.data.fontSize,
-                        fill: element.data.fill,
-                        id: element.id
-                    });
-                    c.add(text);
-                } else {
-                    const shape = new fabric[element.type === 'line' ? 'Line' : element.type](element.data);
-                    shape.id = element.id;
-                    c.add(shape);
+                try {
+                    const fabricType = element.type === 'text' ? 'Textbox' :
+                                       element.type === 'line' ? 'Line' :
+                                       element.type.charAt(0).toUpperCase() + element.type.slice(1);
+                    if (element.type === 'text') {
+                        const text = new fabric.Textbox(element.data.text, {
+                            left: element.data.left,
+                            top: element.data.top,
+                            fontSize: element.data.fontSize,
+                            fill: element.data.fill,
+                            id: element.id
+                        });
+                        c.add(text);
+                    } else if (['Rect', 'Circle', 'Line'].includes(fabricType)) {
+                        const shape = new fabric[fabricType](element.data);
+                        shape.id = element.id;
+                        c.add(shape);
+                    }
+                    c.renderAll();
+                } catch (err) {
+                    console.error(`Error adding socket element ${element.id}:`, err.message);
                 }
-                c.renderAll();
             }
         });
 
@@ -153,7 +170,7 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
         }
         if (element && canvas) {
             canvas.add(element);
-            canvas.renderAll(); // Ensure element is added before API call
+            canvas.renderAll(); // Ensure element is added
             const elementData = {
                 slideId: slide.id,
                 type,
@@ -182,9 +199,13 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
                     console.error('Error adding element:', err.message, err.stack);
                     setError('Failed to add element');
                     // Safe removal
-                    if (element && canvas.getObjects().includes(element)) {
-                        canvas.remove(element);
-                        canvas.renderAll();
+                    try {
+                        if (element && canvas.getObjects().includes(element)) {
+                            canvas.remove(element);
+                            canvas.renderAll();
+                        }
+                    } catch (removeErr) {
+                        console.error('Error removing element:', removeErr.message);
                     }
                 });
         }
