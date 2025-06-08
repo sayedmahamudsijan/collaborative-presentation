@@ -9,7 +9,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'https://collaborative-presentation-57ff6ndzv.vercel.app',
+        origin: [
+            'https://collaborative-presentation-57ff6ndzv.vercel.app',
+            'https://collaborative-presentation-3ml9dkci4.vercel.app',
+            'https://collaborative-presen-git-6e8bbd-sayed-mahmuds-projects-2f91c151.vercel.app'
+        ],
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true
     }
@@ -17,7 +21,11 @@ const io = new Server(server, {
 
 // Middleware
 app.use(cors({
-    origin: 'https://collaborative-presentation-57ff6ndzv.vercel.app',
+    origin: [
+        'https://collaborative-presentation-57ff6ndzv.vercel.app',
+        'https://collaborative-presentation-3ml9dkci4.vercel.app',
+        'https://collaborative-presen-git-6e8bbd-sayed-mahmuds-projects-2f91c151.vercel.app'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
