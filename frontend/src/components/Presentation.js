@@ -87,6 +87,7 @@ function Presentation({ nickname, presentation, setSelectedPresentation }) {
                 </div>
                 {currentSlide && (
                     <SlideEditor
+                        key={`${currentSlide.id}-${isPresenting}`} // Ensure re-render on slide or mode change
                         slide={currentSlide}
                         presentationId={presentation.id}
                         nickname={nickname}
