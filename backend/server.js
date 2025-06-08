@@ -24,6 +24,11 @@ app.use(cors({
 app.use(express.json());
 app.use('/api', apiRoutes);
 
+// Root route for health check
+app.get('/', (req, res) => {
+    res.status(200).json({ message: 'Collaborative Presentation Backend is running' });
+});
+
 // Socket.IO events
 io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
@@ -107,7 +112,7 @@ io.on('connection', (socket) => {
 sequelize.authenticate()
     .then(() => {
         console.log('Database connected');
-        return sequelize.sync({ force: false }); // Production: no table recreation
+        return sequelize.sync({ force: false });
     })
     .then(() => {
         server.listen(process.env.PORT || 5000, () => {
