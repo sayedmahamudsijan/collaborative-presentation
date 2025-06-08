@@ -24,7 +24,7 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
         // Load elements from backend
         fetch(`https://collaborative-presentation.onrender.com/api/elements/${slide.id}`)
             .then((res) => {
-                if (!res.ok) throw new Error('Failed to fetch elements');
+                if (!res.ok) throw new Error(`Failed to fetch elements: ${res.status}`);
                 return res.json();
             })
             .then((elements) => {
@@ -39,7 +39,7 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
                         });
                         c.add(text);
                     } else {
-                        const shape = new fabric[el.type](el.data);
+                        const shape = new fabric[el.type === 'line' ? 'Line' : el.type](el.data);
                         shape.id = el.id;
                         c.add(shape);
                     }
@@ -47,7 +47,7 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
                 c.renderAll();
             })
             .catch((err) => {
-                console.error('Error fetching elements:', err);
+                console.error('Error fetching elements:', err.message, err.stack);
                 setError('Failed to load elements');
             });
 
@@ -55,15 +55,25 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
         c.on('object:modified', (e) => {
             const obj = e.target;
             if (obj && obj.id && (role === 'editor' || isCreator) && !isPresenting) {
+                const elementData = { data: obj.toJSON(['id']) };
+                console.log('Updating element:', { id: obj.id, data: elementData }); // Debug log
                 fetch(`https://collaborative-presentation.onrender.com/api/elements/${obj.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: obj.toJSON(['id']) })
+                    body: JSON.stringify(elementData)
                 })
-                    .then(() => {
+                    .then((res) => {
+                        if (!res.ok) throw new Error(`Failed to update element: ${res.status}`);
+                        return res.json();
+                    })
+                    .then((data) => {
+                        console.log('Element updated:', data); // Debug log
                         socket.emit('update_element', { elementId: obj.id, data: obj.toJSON(['id']), presentationId });
                     })
-                    .catch((err) => console.error('Error updating element:', err));
+                    .catch((err) => {
+                        console.error('Error updating element:', err.message, err.stack);
+                        setError('Failed to update element');
+                    });
             }
         });
 
@@ -80,7 +90,7 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
                     });
                     c.add(text);
                 } else {
-                    const shape = new fabric[element.type](element.data);
+                    const shape = new fabric[element.type === 'line' ? 'Line' : element.type](element.data);
                     shape.id = element.id;
                     c.add(shape);
                 }
@@ -116,6 +126,7 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
     const addElement = () => {
         if ((role !== 'editor' && !isCreator) || isPresenting) return;
         let element;
+        let type = tool.toLowerCase();
         if (tool === 'text') {
             element = new fabric.Textbox('Type here', {
                 left: 100,
@@ -126,9 +137,12 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
             });
         } else {
             const options = { left: 100, top: 100, fill: color, id: Date.now() };
-            if (tool === 'Rect') element = new fabric.Rect({ ...options, width: 100, height: 100 });
-            if (tool === 'Circle') element = new fabric.Circle({ ...options, radius: 50 });
-            if (tool === 'Arrow') {
+            if (tool === 'Rect') {
+                element = new fabric.Rect({ ...options, width: 100, height: 100 });
+            } else if (tool === 'Circle') {
+                element = new fabric.Circle({ ...options, radius: 50 });
+            } else if (tool === 'Arrow') {
+                type = 'line'; // Match backend schema
                 element = new fabric.Line([100, 100, 200, 100], {
                     ...options,
                     stroke: color,
@@ -142,7 +156,7 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
             canvas.renderAll(); // Ensure element is added before API call
             const elementData = {
                 slideId: slide.id,
-                type: tool.toLowerCase(), // Match backend schema
+                type,
                 data: element.toJSON(['id']),
                 presentationId
             };
@@ -188,7 +202,10 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
                 .then(() => {
                     socket.emit('delete_element', { elementId: active.id, presentationId });
                 })
-                .catch((err) => console.error('Error deleting element:', err));
+                .catch((err) => {
+                    console.error('Error deleting element:', err.message, err.stack);
+                    setError('Failed to delete element');
+                });
         }
     };
 
