@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: ['http://localhost:3000', 'https://collaborative-presentation-odw20tjzy.vercel.app'],
+        origin: 'https://collaborative-presentation-57ff6ndzv.vercel.app',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true
     }
@@ -17,17 +17,11 @@ const io = new Server(server, {
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3000', 'https://collaborative-presentation-odw20tjzy.vercel.app'],
+    origin: 'https://collaborative-presentation-57ff6ndzv.vercel.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
 app.use(express.json());
-
-// Root route for health check
-app.get('/', (req, res) => {
-    res.status(200).json({ message: 'Collaborative Presentation Backend is running' });
-});
-
 app.use('/api', apiRoutes);
 
 // Socket.IO events
@@ -113,7 +107,7 @@ io.on('connection', (socket) => {
 sequelize.authenticate()
     .then(() => {
         console.log('Database connected');
-        return sequelize.sync({ force: false }); // Production setting
+        return sequelize.sync({ force: false }); // Production: no table recreation
     })
     .then(() => {
         server.listen(process.env.PORT || 5000, () => {
