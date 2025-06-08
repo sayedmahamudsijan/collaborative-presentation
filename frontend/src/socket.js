@@ -1,8 +1,8 @@
-import io from 'socket.io-client';
+import { io } from 'socket.io-client';
 
 const socket = io('https://collaborative-presentation.onrender.com', {
-  transports: ['websocket'],
-  withCredentials: true
+    transports: ['websocket'],
+    withCredentials: true
 });
 
 export default socket;
