@@ -15,7 +15,7 @@ function Presentation({ nickname, presentation, setSelectedPresentation }) {
         socket.emit('join_presentation', { presentationId: presentation.id, nickname });
         socket.on('update_users', (updatedUsers) => setUsers(updatedUsers));
 
-        fetch(`http://localhost:5000/api/slides/${presentation.id}`)
+        fetch(`https://collaborative-presentation.onrender.com/api/slides/${presentation.id}`)
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch slides');
                 return res.json();
@@ -41,7 +41,7 @@ function Presentation({ nickname, presentation, setSelectedPresentation }) {
 
     const addSlide = () => {
         if (nickname !== presentation.creator_nickname) return;
-        fetch('http://localhost:5000/api/slides', {
+        fetch('https://collaborative-presentation.onrender.com/api/slides', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ presentationId: presentation.id, slideIndex: slides.length })
@@ -63,7 +63,7 @@ function Presentation({ nickname, presentation, setSelectedPresentation }) {
             <SlidesPanel
                 slides={slides}
                 currentSlide={currentSlide}
-                setCurrentSlide={setCurrentSlide} // Fixed prop name
+                setCurrentSlide={setCurrentSlide}
                 addSlide={addSlide}
                 isCreator={nickname === presentation.creator_nickname}
             />
