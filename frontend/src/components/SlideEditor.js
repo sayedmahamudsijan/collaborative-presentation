@@ -137,26 +137,41 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
                 });
             }
         }
-        if (element) {
+        if (element && canvas) {
             canvas.add(element);
+            canvas.renderAll(); // Ensure element is added before API call
+            const elementData = {
+                slideId: slide.id,
+                type: tool.toLowerCase(), // Match backend schema
+                data: element.toJSON(['id']),
+                presentationId
+            };
+            console.log('Sending element data:', elementData); // Debug log
             fetch('https://collaborative-presentation.onrender.com/api/elements', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slideId: slide.id, type: tool, data: element.toJSON(['id']), presentationId })
+                body: JSON.stringify(elementData)
             })
                 .then((res) => {
-                    if (!res.ok) throw new Error('Failed to save element');
+                    if (!res.ok) {
+                        throw new Error(`Failed to save element: ${res.status} ${res.statusText}`);
+                    }
                     return res.json();
                 })
                 .then((data) => {
+                    console.log('Element saved:', data); // Debug log
                     element.id = data.id; // Update with server-assigned ID
                     canvas.renderAll();
                     socket.emit('add_element', { slideId: slide.id, element: data });
                 })
                 .catch((err) => {
-                    console.error('Error adding element:', err);
+                    console.error('Error adding element:', err.message, err.stack);
                     setError('Failed to add element');
-                    canvas.remove(element); // Rollback on error
+                    // Safe removal
+                    if (element && canvas.getObjects().includes(element)) {
+                        canvas.remove(element);
+                        canvas.renderAll();
+                    }
                 });
         }
     };
@@ -164,8 +179,9 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
     const deleteElement = () => {
         if ((role !== 'editor' && !isCreator) || isPresenting) return;
         const active = canvas.getActiveObject();
-        if (active) {
+        if (active && canvas) {
             canvas.remove(active);
+            canvas.renderAll();
             fetch(`https://collaborative-presentation.onrender.com/api/elements/${active.id}`, {
                 method: 'DELETE'
             })
@@ -177,10 +193,12 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
     };
 
     const exportPDF = () => {
-        const pdf = new jsPDF();
-        const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', 10, 10, 190, 100);
-        pdf.save(`${presentationId}-slide-${slide.slide_index}.pdf`);
+        if (canvas) {
+            const pdf = new jsPDF();
+            const imgData = canvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', 10, 10, 190, 100);
+            pdf.save(`${presentationId}-slide-${slide.slide_index}.pdf`);
+        }
     };
 
     const zoom = (factor) => {
@@ -188,6 +206,7 @@ function SlideEditor({ slide, presentationId, nickname, isCreator, isPresenting,
             canvas.setZoom(canvas.getZoom() * factor);
             canvas.setWidth(canvas.getWidth() * factor);
             canvas.setHeight(canvas.getHeight() * factor);
+            canvas.renderAll();
         }
     };
 
