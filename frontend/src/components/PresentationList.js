@@ -8,7 +8,7 @@ function PresentationList({ nickname, setSelectedPresentation }) {
 
     useEffect(() => {
         axios
-            .get('http://localhost:5000/api/presentations')
+            .get('https://collaborative-presentation.onrender.com/api/presentations')
             .then((res) => setPresentations(res.data))
             .catch((err) => {
                 console.error('Error fetching presentations:', err);
@@ -18,7 +18,7 @@ function PresentationList({ nickname, setSelectedPresentation }) {
 
     const createPresentation = () => {
         axios
-            .post('http://localhost:5000/api/presentations', { title, nickname })
+            .post('https://collaborative-presentation.onrender.com/api/presentations', { title, nickname })
             .then((res) => {
                 setSelectedPresentation(res.data);
                 setError(null);
@@ -31,7 +31,7 @@ function PresentationList({ nickname, setSelectedPresentation }) {
 
     const joinPresentation = (presentation) => {
         axios
-            .post('http://localhost:5000/api/presentations/join', {
+            .post('https://collaborative-presentation.onrender.com/api/presentations/join', {
                 presentationId: presentation.id,
                 nickname
             })
